@@ -38,15 +38,28 @@ func (db *DBRepo) GetProducts(ctx context.Context, param entity.GetProductReques
 	// indicator next page
 	hasNext := false
 
-	// mock params implementations
-	// becuse length 3 on mock data product, return empty if limit more then 3 and page more then 1
-	if param.Limit > 3 && param.Page > 1 {
+	// TODO: replace with database limit and offset
+	// for next indicator, increase value param.Limit +1
+	// and check if result length data from db is same param.Limit set next is true
+	// if data is less then param.Limit + 1, set next is false
+	offset := (param.Page - 1) * param.Limit
+	if offset >= len(mockProducts) {
 		mockProducts = []entity.Product{}
-	}
-
-	if param.Limit < 3 && param.Page == 1 {
+	} else if param.Limit < len(mockProducts) {
 		hasNext = true
-		mockProducts = mockProducts[:param.Limit]
+		startIndex := 0
+		limitIndex := param.Limit
+		if offset > 0 {
+			startIndex = offset
+			limitIndex = (param.Limit) + offset
+		}
+
+		if limitIndex >= len(mockProducts) {
+			hasNext = false
+			limitIndex = len(mockProducts)
+		}
+
+		mockProducts = mockProducts[startIndex:limitIndex]
 	}
 
 	return entity.GetProductResponse{
@@ -54,6 +67,4 @@ func (db *DBRepo) GetProducts(ctx context.Context, param entity.GetProductReques
 		Next:     hasNext,
 		Products: mockProducts,
 	}, nil
-
-	return
 }
